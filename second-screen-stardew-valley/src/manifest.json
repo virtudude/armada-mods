@@ -1,0 +1,9 @@
+{
+  "Name": "Armada Field Journal",
+  "Author": "Armada",
+  "Version": "0.1.0",
+  "Description": "A native HTML second-screen journal using your game's own art.",
+  "UniqueID": "Armada.FieldJournal",
+  "EntryDll": "ArmadaStardew.dll",
+  "MinimumApiVersion": "4.5.2"
+}

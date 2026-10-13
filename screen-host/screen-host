@@ -343,6 +343,14 @@ class Host(Gtk.Application):
             ucm.register_script_message_handler("armada", None)
             ucm.connect("script-message-received::armada", self.view_message)
             self.web = WebKit.WebView(user_content_manager=ucm)
+            if META.get("view_options", {}).get("lock_page_zoom", False):
+                # WebKitGTK has its own GtkGestureZoom, separate from DOM
+                # viewport/touch-action rules. Let the HTML app own pinch input.
+                controllers = self.web.observe_controllers()
+                for index in range(controllers.get_n_items()):
+                    controller = controllers.get_item(index)
+                    if isinstance(controller, Gtk.GestureZoom):
+                        controller.set_propagation_phase(Gtk.PropagationPhase.NONE)
             self.web.set_background_color(Gdk.RGBA(0, 0, 0, 0))
             self.web.connect("decide-policy", self.view_policy, WebKit)
             self.web.connect("load-changed", self.view_loaded, WebKit)
