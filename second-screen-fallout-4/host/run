@@ -1,0 +1,14 @@
+#!/bin/sh
+set -eu
+here=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+python3 "$here/../bridge/main.py" &
+bridge=$!
+"$here/pipboy-host" &
+host=$!
+cleanup() {
+    trap - EXIT INT TERM
+    kill "$bridge" "$host" 2>/dev/null || true
+    wait "$bridge" "$host" 2>/dev/null || true
+}
+trap cleanup EXIT INT TERM
+wait "$host"

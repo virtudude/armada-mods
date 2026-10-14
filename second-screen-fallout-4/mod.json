@@ -1,0 +1,17 @@
+{
+  "id": "second-screen-fallout-4",
+  "version": "0.2.2",
+  "name": "Fallout 4: Pip-Boy",
+  "summary": "Your Pip-Boy on the bottom screen: inventory, quests, maps, stats and radio.",
+  "description": "A native Rust/Vulkan companion using Fallout 4's built-in Pip-Boy app connection. Maps and art are extracted from your installed game. Restores the companion service for Steam version 1.11.240.0 in a private launch overlay; other executable versions are skipped. No F4SE or game DLL injection required.",
+  "tags": [
+    "dual-screen"
+  ],
+  "steam_appids": [
+    377160
+  ],
+  "hooks": {
+    "before_launch": "hooks/before_launch"
+  },
+  "second_screen": "host/run"
+}

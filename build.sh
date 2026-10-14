@@ -24,7 +24,7 @@ for MOD in "${mods[@]}"; do
     STAGE="$ROOT/build/stage/$MOD"
     rm -rf "$STAGE"
     mkdir -p "$STAGE"
-    tar -C "$MOD" --exclude=./src --exclude=./build.sh --exclude=./states -cf - . | tar -C "$STAGE" -xf -
+    tar -C "$MOD" --exclude=./src --exclude=./build.sh --exclude=./states --exclude=./native/target -cf - . | tar -C "$STAGE" -xf -
     if [[ -f "$MOD/build.sh" ]]; then
         (source "$MOD/build.sh")
     fi

@@ -12,6 +12,7 @@ devices.
 | `second-screen-crosscode` | CrossCode | Status, element switching and consumables by touch, quests |
 | `second-screen-duke-nukem-3d` | Duke Nukem 3D: 20th Anniversary World Tour | Health, armor and ammo moved off the game screen, weapons and inventory items by touch |
 | `second-screen-marathon` | Classic Marathon | The suit display moved off the game screen: shield, oxygen, motion sensor, weapons by touch |
+| `second-screen-fallout-4` | Fallout 4 | Touch Pip-Boy: inventory, quests, game-derived maps, SPECIAL, perks and radio |
 
 A mod reaches into its game's code, so a game update can break it. A mod
 that stops understanding its game is meant to let go of the second screen,
@@ -98,6 +99,7 @@ Every build needs `bash`, `python3`, `curl` and `unzip`. Beyond that:
 |---|---|
 | Hollow Knight | `dotnet` 8 or `podman`, and the game's assemblies (below) |
 | Balatro, CrossCode, Duke Nukem 3D, Marathon | Nothing more |
+| Fallout 4 | Rust/Cargo on ARM64 Linux |
 
 A Unity mod compiles against the game's own assemblies. Those are not in
 this repository. Collect them once from a copy of the game you own:

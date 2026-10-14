@@ -5,3 +5,6 @@ refs/
 obj/
 bin/
 __pycache__/
+
+# Rust native host build output
+**/target/
