@@ -1,0 +1,5 @@
+#!/bin/sh
+# Nothing runs inside the game: the provider reads its memory from outside.
+here=$(dirname "$0")
+"$here/provider" &
+exec "$here/screen-host"

@@ -4,8 +4,6 @@
 DOTNET_IMAGE=mcr.microsoft.com/dotnet/sdk:8.0
 BEPINEX_URL='https://builds.bepinex.dev/projects/bepinex_be/788/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.788%2B5b766a3.zip'
 BEPINEX_SHA256=f4cc496bd098a0df4164b81e3737297707f13a47c2478dba2f60eefab784817a
-UE4SS_URL='https://github.com/UE4SS-RE/RE-UE4SS/releases/download/v3.0.1/UE4SS_v3.0.1.zip'
-UE4SS_SHA256=4b47d4bceddd2f561a4e395bfa00924ccfc945af576a2d0c613e6537846c57ec
 
 die() {
     echo "build: $MOD: $*" >&2
@@ -99,55 +97,7 @@ unity_mono() {
     unity_tools
 }
 
-# ue4ss <folder of the game's exe, relative to the game folder>
-ue4ss() {
-    local src dest="$STAGE/overlay/$1"
-    src="$(unpacked "$(fetch "$UE4SS_URL" "$UE4SS_SHA256" UE4SS_v3.0.1.zip)" ue4ss-3.0.1)"
-    install -m 0644 "$ROOT/THIRD-PARTY.md" "$STAGE/THIRD-PARTY.md"
-    install -D -m 0644 "$src/dwmapi.dll" "$dest/dwmapi.dll"
-    install -D -m 0644 "$src/UE4SS.dll" "$dest/UE4SS.dll"
-    install -D -m 0644 "$src/Mods/Keybinds/Scripts/main.lua" "$dest/Mods/Keybinds/Scripts/main.lua"
-    mkdir -p "$dest/Mods/shared"
-    cp -r "$src/Mods/shared/jsbProfiler" "$src/Mods/shared/UEHelpers" "$dest/Mods/shared/"
-}
-
-# A preload library for a native Linux game: always x86-64, since games on Armada are x86-64
-# builds run under emulation. It must load in the oldest C library a game runtime carries.
-native_x86_64() {
-    local src="$1" out="$2" cc
-    mkdir -p "$(dirname "$out")"
-    if [[ "$(uname -m)" == x86_64 ]] && command -v gcc >/dev/null; then cc=(gcc)
-    elif command -v x86_64-linux-gnu-gcc >/dev/null; then cc=(x86_64-linux-gnu-gcc)
-    else
-        podman image exists localhost/armada-mods-gcc-x86-64 || podman build -q -t localhost/armada-mods-gcc-x86-64 - >/dev/null <<'IMAGE' || die "could not build the compiler container"
-FROM docker.io/library/debian:12-slim
-RUN apt-get update && apt-get install -y --no-install-recommends gcc-x86-64-linux-gnu libc6-dev-amd64-cross && rm -rf /var/lib/apt/lists/*
-IMAGE
-        cc=(podman run --rm -v "$ROOT:$ROOT" -w "$PWD" localhost/armada-mods-gcc-x86-64 x86_64-linux-gnu-gcc)
-    fi
-    "${cc[@]}" -O2 -s -Wall -shared -fPIC -fno-stack-protector -o "$out" "$src" -ldl -lpthread || die "compile failed: $src"
-    if grep -aoE 'GLIBC_2\.(1[89]|[2-9][0-9])' "$out" | grep -q .; then die "$src needs a newer C library than 2.17"; fi
-}
-
-# The compiler for small Windows helpers: the host's MinGW if there is one, otherwise a container.
-run_mingw() {
-    if command -v x86_64-w64-mingw32-gcc >/dev/null; then
-        x86_64-w64-mingw32-gcc "$@"
-    else
-        podman image exists localhost/armada-mods-mingw || podman build -q -t localhost/armada-mods-mingw - >/dev/null <<'IMAGE' || die "could not build the MinGW container"
-FROM docker.io/library/debian:12-slim
-RUN apt-get update && apt-get install -y --no-install-recommends gcc-mingw-w64-x86-64 && rm -rf /var/lib/apt/lists/*
-IMAGE
-        podman run --rm -v "$ROOT:$ROOT" -w "$PWD" localhost/armada-mods-mingw x86_64-w64-mingw32-gcc "$@"
-    fi
-}
-
-# UE4SS for games whose start-up protection fails when UE4SS is already scanning the
-# process: the stock proxy loads lib/ue4ss-late, which loads the real UE4SS later.
-ue4ss_late() {
-    local dest="$STAGE/overlay/$1"
-    ue4ss "$1/ue4ss"
-    mv "$dest/ue4ss/dwmapi.dll" "$dest/dwmapi.dll"
-    (cd "$ROOT/lib/ue4ss-late" && run_mingw -O2 -s -Wall -shared -static-libgcc -o "$dest/UE4SS.dll" late.c) ||
-        die "compile failed: lib/ue4ss-late"
+# What a provider written in Python shares with the others, next to the provider.
+provider_lib() {
+    install -D -m 0644 "$ROOT/lib/provider.py" "$STAGE/host/armada_provider.py"
 }

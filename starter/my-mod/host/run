@@ -1,0 +1,5 @@
+#!/bin/sh
+# The provider finds the game and tells the screen host what to show.
+here=$(dirname "$0")
+"$here/provider" &
+exec "$here/screen-host"

@@ -1,0 +1,21 @@
+#!/usr/bin/python3
+"""Puts back the size of the game's view, which the provider made larger to keep the game's own HUD off.
+
+Also run before a launch, for a size left behind when this did not get to run.
+"""
+import os, re
+
+saved = os.path.join(os.environ["ARMADA_MOD_DATA_DIR"], "screen-size")
+config = os.path.join(os.environ["ARMADA_MOD_GAME_DIR"], "DUKE3D.CFG")
+try:
+    size = int(open(saved).read())
+    text = open(config, "rb").read()
+except (OSError, ValueError):
+    raise SystemExit(0)
+# only where the game kept a size larger than the player's own
+found = re.search(rb"^ScreenSize = (\d+)(?=\r?$)", text, re.M)
+if found and int(found.group(1)) < size:
+    with open(config + ".tmp", "wb") as f:
+        f.write(text[:found.start(1)] + str(size).encode() + text[found.end(1):])
+    os.replace(config + ".tmp", config)
+os.remove(saved)

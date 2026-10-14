@@ -1,0 +1,116 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  html { font-size: 3.4vh; --u: calc(100vh / 1080); }
+  html, body { margin: 0; height: 100%; overflow: hidden; user-select: none; -webkit-user-select: none; }
+  * { box-sizing: border-box; }
+  body { --or: #e07818; background: #000; color: #fff; font: 800 .58rem "Noto Sans", sans-serif; letter-spacing: .04rem; text-transform: uppercase;
+         display: grid; grid-template-rows: auto minmax(0, 1fr); gap: calc(6 * var(--u)); padding: calc(8 * var(--u)); }
+  img, .cut, #panel, #idle { image-rendering: pixelated; }
+  /* The classic status bar's two ends, each a pillar, two wells and a cap, without the weapons well between them:
+     .cut shows --w columns of the bar from --x, and what sits in a well is centred on --c, both in the bar's own pixels.
+     The ammo count takes the inventory well, under the bar's own AMMO plate laid over that well's. */
+  #bar { display: flex; justify-content: center; --s: calc(7.84 * var(--u)); }
+  .cut { position: relative; width: calc(var(--w) * var(--s)); height: calc(34 * var(--s)); background-size: calc(320 * var(--s)) 100%; background-position: calc(-1 * var(--x) * var(--s)) 0; }
+  .patch { width: calc(19.5 * var(--s)); height: calc(12 * var(--s)); background-size: calc(320 * var(--s)) calc(34 * var(--s)); background-position: calc(-197 * var(--s)) calc(-3 * var(--s)); }
+  .cut > .patch { left: calc(19 * var(--s)); top: calc(9 * var(--s)); }
+  .cut > * { position: absolute; left: calc(var(--c) * var(--s)); top: calc(21.5 * var(--s)); transform: translate(-50%, -50%); display: flex; }
+  /* where the two ends meet, the steel over the wall between the health and armor wells covers what is left of
+     the pillars: the strip above the label plates, and the narrow piece between two plates stretched to the gap here */
+  .seam { width: calc(16 * var(--s)); height: calc(6 * var(--s)); background-size: calc(320 * var(--s)) calc(34 * var(--s)); background-position: calc(-40.5 * var(--s)) 0; }
+  .cut > .seam { top: calc(3 * var(--s)); }
+  .seam.low { width: calc(13 * var(--s)); height: calc(4 * var(--s)); background-size: calc(756 * var(--s)) calc(34 * var(--s)); background-position: calc(-110 * var(--s)) calc(-6 * var(--s)); }
+  .cut > .seam.low { top: calc(8 * var(--s)); }
+  .led { gap: var(--s); height: calc(11 * var(--s)); } .led img { height: 100%; }
+  #cards { flex-direction: column; gap: calc(.75 * var(--s)); }
+  #cards img { width: calc(10 * var(--s)); opacity: .12; filter: grayscale(1); } #cards img.on { opacity: 1; filter: none; }
+  #cards img.red.on { filter: hue-rotate(125deg) saturate(1.6); } #cards img.yellow.on { filter: hue-rotate(-170deg) saturate(1.8) brightness(1.5); }
+  /* the steel panel behind the game's menus, holding wells like the bar's own: black, edged in orange */
+  #panel { min-height: 0; background-size: 100% 100%; padding: calc(62 * var(--u)) calc(109 * var(--u)) calc(100 * var(--u));
+           display: grid; grid-template-rows: minmax(0, 1fr) 4.2rem; gap: .3rem; }
+  .box { position: relative; background: #000; border: calc(3 * var(--u)) solid var(--or);  box-shadow: 0 0 0 calc(3 * var(--u)) #1c1e21; }
+  #rack { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: repeat(3, minmax(0, 1fr)); gap: .3rem; }
+  .slot { min-width: 0; min-height: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+  .slot img.w { max-width: 82%; max-height: 74%; object-fit: contain; filter: drop-shadow(.1rem .1rem 0 #000); }
+  .slot .a { position: absolute; right: .35rem; bottom: .3rem; display: flex; gap: .06rem; height: 1.2rem; } .slot .a img { height: 100%; filter: brightness(1.35); }
+  .slot.none, .item.none { border-color: #5a3410; }
+  /* what has not been found yet is only its outline, filled flat */
+  .slot.none img.w, .item.none img { filter: brightness(0) invert(1); opacity: .1; } .slot.none .a { visibility: hidden; }
+  /* the kick has no picture lying on the ground: it is the boot as the player sees it mid-kick, the leg running off the tile */
+  .slot[data-w="0"] img.w { max-width: none; max-height: none; height: 150%; align-self: flex-start; margin-top: 6%; }
+  .slot.on { border-color: #ffc070; background: #100b05; box-shadow: 0 0 0 calc(3 * var(--u)) #ffc070; }
+  .slot:not(.none):active, .item.can:active { filter: brightness(1.25); }
+  /* five items to touch, then the two that work by themselves */
+  #items { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: .3rem; }
+  .item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .22rem; padding: .2rem .5rem .3rem; }
+  .item img { height: 2.1rem; max-width: 80%; object-fit: contain; }
+  .item u { display: block; width: 100%; height: .22rem; background: #2a1a0c; overflow: hidden; } .item u i { display: block; height: 100%; background: var(--or); }
+  .item.none u i { width: 0 !important; }
+  .item.arm { border-color: #fff; background: #6b1c08; }
+  .use { position: absolute; inset: 42% .2rem .2rem; display: flex; align-items: center; justify-content: center; background: #fff; color: #5a1202; border-radius: .15rem; }
+  /* the game's loading screen while there is no game to show */
+  #idle { position: fixed; inset: 0; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 2.4rem; background: #000 center / cover no-repeat; }
+  #idle img { height: 2.2rem; }
+</style>
+</head>
+<body>
+<div id="bar">
+  <div class="cut" style="--x:8;--w:72"><div class="led" id="health" style="--c:24.5"></div><div class="led" id="armor" style="--c:56.5"></div></div>
+  <div class="cut" style="--x:228;--w:84"><i class="seam" style="--c:-.5"></i><i class="seam low" style="--c:2"></i><i class="patch"></i><div class="led" id="ammo" style="--c:19"></div><div id="cards" style="--c:61"></div></div>
+</div>
+<div id="panel"><div id="rack"></div><div id="items"></div></div>
+<div id="idle"></div>
+<script>
+  const $ = id => document.getElementById(id);
+  // The game's own pictures, by tile number, turned into files when the game is launched.
+  const ART = armada.data + "art/";
+  const tile = n => `${ART}${n}.png`;
+  // the game's large red letters start at "A"
+  const big = text => text.split("").map(c => `<img src="${tile(2940 + c.charCodeAt(0) - 65)}">`).join("");
+  const led = n => String(Math.max(0, n)).split("").map(d => `<img src="${tile(2472 + +d)}">`).join("");
+  // weapon number and its picture, in rack order; the kick has no ammo
+  const RACK = [[0, 2522], [1, 21], [2, 28], [3, 22], [4, 23], [5, 26], [6, 25], [11, 32], [7, 29], [8, 27], [9, 24], [12, 5134]];
+  // inventory items in the game's order; the last two work by themselves
+  const ITEMS = [["medkit", 53, "spend"], ["steroids", 55, "spend"], ["holoduke", 1348, "tap"], ["jetpack", 57, "tap"], ["vision", 59, "tap"], ["scuba", 56], ["boots", 61]];
+  const CARDS = [[1, "blue"], [2, "red"], [4, "yellow"]];
+
+  let state = null, drawn = {}, armed = null, armTimer = 0, armedAt = 0;
+  const put = (id, html) => { if (drawn[id] !== html) { $(id).innerHTML = html; drawn[id] = html; } };
+
+  function draw() {
+    const s = state;
+    if (!s || !s.owned) { $("idle").style.display = ""; $("idle").innerHTML = s ? "" : big("LOADING"); return; }
+    $("idle").style.display = "none";
+    put("health", led(s.health)); put("armor", led(s.armor)); put("ammo", s.weapon ? led(s.ammo[s.weapon]) : "");
+    put("cards", CARDS.map(([bit, c]) => `<img class="${c}${s.cards & bit ? " on" : ""}" src="${tile(60)}">`).join(""));
+    // tiles are only rebuilt when what is carried changes, so a tap is never lost to a redraw: counts are filled in place
+    put("rack", RACK.map(([id, art]) => `<div class="box slot${s.owned.includes(id) ? "" : " none"}${id === s.weapon ? " on" : ""}" data-w="${id}">
+      <img class="w" src="${tile(art)}" onload="this.style.width = this.naturalWidth * .12 + 'rem'">${id ? `<span class="a" data-a="${id}"></span>` : ""}</div>`).join(""));
+    for (const el of document.querySelectorAll(".a")) { const n = led(s.ammo[el.dataset.a]); if (el.innerHTML !== n) el.innerHTML = n; }
+    put("items", ITEMS.map(([key, art, how]) => { const have = s.items[key] > 0; return `<div class="box item${have ? "" : " none"}${how && have ? " can" : ""}${armed === key ? " arm" : ""}" data-i="${key}" data-how="${how || ""}">
+      <img src="${tile(art)}"><u><i></i></u>${armed === key ? `<b class="use">Use</b>` : ""}</div>`; }).join(""));
+    for (const el of document.querySelectorAll(".item")) el.querySelector("i").style.width = Math.min(100, 100 * s.items[el.dataset.i] / s.full[el.dataset.i]) + "%";
+  }
+
+  document.body.addEventListener("click", e => {
+    const slot = e.target.closest(".slot"), item = e.target.closest(".item.can");
+    const was = armed;
+    armed = null; clearTimeout(armTimer);
+    if (slot && !slot.classList.contains("none")) armada.send({ weapon: +slot.dataset.w });
+    else if (item && item.dataset.how === "tap") armada.send({ item: item.dataset.i });
+    // what gets used up shows a Use button first, and only that button uses it; the second half of a double tap does not count
+    else if (item && was === item.dataset.i) { if (e.target.closest(".use") && performance.now() - armedAt > 500) armada.send({ item: was }); }
+    else if (item) { armed = item.dataset.i; armedAt = performance.now(); armTimer = setTimeout(() => { armed = null; draw(); }, 3000); }
+    draw();
+  });
+  for (const el of document.querySelectorAll(".cut, .patch, .seam")) el.style.backgroundImage = `url('${tile(2462)}')`;
+  $("panel").style.backgroundImage = `url('${tile(2456)}')`;
+  $("idle").style.backgroundImage = `url('${tile(3281)}')`;
+  armada.onState = s => { state = s; draw(); };
+  state = armada.last;
+  draw();
+</script>
+</body>
+</html>

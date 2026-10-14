@@ -142,6 +142,7 @@
     `<i${r.bg ? ' class="b"' : ""} style="${r.c ? "color:" + r.c + ";" : ""}${r.bg ? "background:" + r.bg + ";" : ""}">${esc(r.t)}</i>`).join("") + "</div>").join("");
 
   function held(c) {
+    if (c.hidden) return '<div class="jk box"><div class="r"><div class="name">Face down</div></div></div>';
     const art = spr(c.set, c.x, c.y, "card ed " + c.edition + (c.debuff ? " debuff" : ""), c.soul ? spr(c.set, c.soul.x, c.soul.y, "soul") : "");
     const badges = [c.set === "Joker" ? `<span class="badge r${c.rarity}">${["", "Common", "Uncommon", "Rare", "Legendary"][c.rarity] || ""}</span>`
                                       : `<span class="badge ${c.set}">${esc(c.set)}</span>`];

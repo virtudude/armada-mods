@@ -34,6 +34,8 @@ namespace ArmadaSecondScreen
         // State the game pushes into its own map from scene scripts.
         static readonly string[] Mirrored = { "originOffsetX", "originOffsetY", "sceneWidth", "sceneHeight", "doorX", "doorY",
             "doorScene", "doorMapZone", "doorOriginOffsetX", "doorOriginOffsetY", "doorSceneWidth", "doorSceneHeight", "inRoom" };
+        static readonly FieldInfo[] MirroredFields = Array.ConvertAll(Mirrored, n =>
+            typeof(GameMap).GetField(n, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public));
 
         GameObject holder, clone;
         GameMap src, map;
@@ -51,6 +53,7 @@ namespace ArmadaSecondScreen
         protected override bool Show => true;
         protected override string Extra => extra;
         protected override void OnAttach() { sentIcons.Clear(); }
+        protected override void OnDetach() { DropClone(); extra = ""; }
 
         protected override void OnShutdown() { DropClone(); }
         protected override void OnConfig() { shownKey = null; nextRefresh = 0f; }
@@ -134,8 +137,7 @@ namespace ArmadaSecondScreen
 
         void Mirror()
         {
-            const BindingFlags f = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public;
-            foreach (var n in Mirrored) { var fi = typeof(GameMap).GetField(n, f); fi.SetValue(map, fi.GetValue(src)); }
+            foreach (var f in MirroredFields) f.SetValue(map, f.GetValue(src));
         }
 
         // Everything that changes what the map shows, other than the moving player marker.
@@ -248,7 +250,7 @@ namespace ArmadaSecondScreen
                 string key = id + ":" + sprite.name;
                 if (sentIcons.Contains(key)) continue;
                 sentIcons.Add(key);
-                link.SendText(Msg.State, "{\"assets\":{\"c" + id + "\":\"" + Companion.Png(sprite, 128) + "\"}}");
+                SendPicture("c" + id, sprite);
                 return true;
             }
             if (inventory == null) return false;
@@ -259,10 +261,17 @@ namespace ArmadaSecondScreen
                 if (sentIcons.Contains(key)) continue;
                 sentIcons.Add(key);
                 if (sprite == null) continue;
-                link.SendText(Msg.State, "{\"assets\":{\"i:" + entry + "\":\"" + Companion.Png(sprite, 128) + "\"}}");
+                SendPicture("i:" + entry, sprite);
                 return true;
             }
             return false;
+        }
+
+        // A sprite that cannot be read is left out; the view shows the entry without a picture.
+        void SendPicture(string name, Sprite sprite)
+        {
+            try { link.SendText(Msg.State, "{\"assets\":{\"" + name + "\":\"" + Companion.Png(sprite, 128) + "\"}}"); }
+            catch (Exception e) { Log.Info("picture " + name + ": " + e.Message); }
         }
 
         protected override string OnCommand(string cmd)

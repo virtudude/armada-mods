@@ -53,7 +53,6 @@ local function runs(nodes, out, bg)
       local s = cfg.object.string
       if type(s) == "table" then s = s.string end
       out[#out + 1] = { t = tostring(s or ""), c = hex(cfg.object.colours and cfg.object.colours[1]), bg = bg }
-      pcall(cfg.object.remove, cfg.object)
     elseif cfg.text then out[#out + 1] = { t = tostring(cfg.text), c = hex(cfg.colour), bg = bg }
     elseif n.nodes then runs(n.nodes, out, hex(cfg.colour)) end
   end
@@ -67,11 +66,13 @@ local function sweep(v, depth)
 end
 local function describe(card)
   local lines = {}
+  local ok, ui = pcall(card.generate_UIBox_ability_table, card)
+  if not ok or type(ui) ~= "table" then return lines end
   pcall(function()
-    local ui = card:generate_UIBox_ability_table()
     for _, line in ipairs(ui.main or {}) do lines[#lines + 1] = runs(line, {}) end
-    sweep(ui.name, 0); sweep(ui.info, 0)
   end)
+  -- whatever reading the lines left behind goes too
+  pcall(sweep, ui.main, 0); pcall(sweep, ui.name, 0); pcall(sweep, ui.info, 0)
   return lines
 end
 
@@ -81,6 +82,8 @@ local function cards(area, fn)
   return out
 end
 local function held(c)
+  -- a card the game has turned face down stays unknown here too
+  if c.facing == "back" then return { hidden = true } end
   local center = c.config.center
   local a = c.ability or {}
   return { name = name_of(c), set = center.set, x = center.pos.x, y = center.pos.y,
@@ -95,7 +98,9 @@ local function playing(c)
   return { suit = base.suit or "", value = base.value or "", id = base.id or 0,
            x = c.config.card.pos.x, y = c.config.card.pos.y, bx = center.pos.x, by = center.pos.y,
            enh = (center.set == "Enhanced" and center.name) or "", seal = c.seal or "",
-           edition = (c.edition and c.edition.type) or "", left = c.area == G.deck }
+           edition = (c.edition and c.edition.type) or "",
+           -- a card drawn face down counts as still in the deck, as in the game's own deck view
+           left = c.area == G.deck or (c.ability and c.ability.wheel_flipped) or false }
 end
 -- Every card of the run's deck in a fixed order, so nothing about the draw order leaves the game.
 local function deck()
@@ -200,6 +205,8 @@ local function pump()
   while #inbuf >= 16 do
     local b1, b2, b3, b4 = inbuf:byte(9, 12)
     local len = b1 + b2 * 256 + b3 * 65536 + b4 * 16777216
+    -- nothing the view sends is large
+    if inbuf:sub(1, 4) ~= "A2SS" or len > 65536 then drop() return end
     if #inbuf < 16 + len then break end
     local t = inbuf:byte(5) + inbuf:byte(6) * 256
     local body = inbuf:sub(17, 16 + len)
@@ -237,8 +244,13 @@ local function tick(dt)
   pump()
 end
 
-local update = love.update
+local update, broken = love.update, 0
 love.update = function(dt)
   update(dt)
-  pcall(tick, dt)
+  if dead then return end
+  if pcall(tick, dt) then broken = 0 else
+    -- the same rule for a fault anywhere else in the provider
+    broken = broken + 1
+    if broken > 600 then dead = true pcall(drop) end
+  end
 end

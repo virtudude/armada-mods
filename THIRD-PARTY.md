@@ -24,18 +24,6 @@ file.
 | MonoMod | MIT | https://github.com/MonoMod/MonoMod |
 | SemanticVersioning | MIT | https://github.com/adamreeve/semver.net |
 
-## Unreal mods
-
-| Component | License | Source |
-|---|---|---|
-| UE4SS 3.0.1 | MIT | https://github.com/UE4SS-RE/RE-UE4SS |
-
-## Acknowledgements
-
-The memory layout the Persona 3 Reload mod reads was worked out by the
-Persona modding community and published in
-[p3rpc.nativetypes](https://github.com/rirurin/p3rpc.nativetypes).
-
 Nothing derived from a game ships in a package. Patched game files,
 generated assemblies and extracted art are produced on the player's device
 from their own copy of the game.

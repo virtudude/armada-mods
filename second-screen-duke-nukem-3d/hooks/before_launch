@@ -1,0 +1,75 @@
+#!/usr/bin/python3
+"""Turns the weapon, item and digit pictures in the game's tile files into PNG files for the view.
+
+Nothing of the game ships in the mod.
+"""
+import glob, os, struct, subprocess, sys, zlib
+
+GAME = os.environ["ARMADA_MOD_GAME_DIR"]
+OUT = os.path.join(os.environ["ARMADA_MOD_DATA_DIR"], "art")
+# weapons lying on the ground, the kick, inventory items, the key card, the red digits, the large letters,
+# the classic status bar, the steel panel behind the menus and the loading screen
+WANTED = set(range(21, 30)) | {32, 53, 54, 55, 56, 57, 59, 60, 61, 1348, 2522, 5134, 2456, 2462, 3281} | set(range(2472, 2482)) | \
+    set(range(2940, 2966))
+
+subprocess.run([os.path.join(os.path.dirname(os.path.abspath(__file__)), "after_exit")], check=False)
+
+stamp = os.path.join(OUT, "stamp")
+sources = [os.path.join(GAME, "DUKE3D.GRP")] + sorted(glob.glob(os.path.join(GAME, "TILES*.ART")))
+mark = "4 " + " ".join(f"{os.path.basename(path)} {os.stat(path).st_mtime_ns}" for path in sources)
+try:
+    if open(stamp).read() == mark:
+        sys.exit(0)
+except OSError:
+    pass
+
+
+def png(width, height, rgba):
+    def chunk(kind, data):
+        return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data))
+    rows = b"".join(b"\0" + rgba[y * width * 4:(y + 1) * width * 4] for y in range(height))
+    return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0)) + \
+        chunk(b"IDAT", zlib.compress(rows, 9)) + chunk(b"IEND", b"")
+
+
+def tiles(art, palette):
+    """Pictures in one tile file: sizes for a run of tile numbers, then each picture column by column."""
+    _, _, first, last = struct.unpack_from("<4I", art)
+    count = last - first + 1
+    widths = struct.unpack_from(f"<{count}h", art, 16)
+    heights = struct.unpack_from(f"<{count}h", art, 16 + 2 * count)
+    at = 16 + 8 * count
+    for i in range(count):
+        w, h = widths[i], heights[i]
+        if w > 0 and h > 0:
+            if first + i in WANTED:
+                rgba = bytearray(w * h * 4)
+                for x in range(w):
+                    for y in range(h):
+                        c = art[at + x * h + y]
+                        if c != 255:        # 255 is see-through
+                            rgba[(y * w + x) * 4:(y * w + x) * 4 + 4] = palette[c * 3:c * 3 + 3] + b"\xff"
+                yield first + i, png(w, h, bytes(rgba))
+            at += w * h
+
+
+grp = open(os.path.join(GAME, "DUKE3D.GRP"), "rb").read()
+start = grp.index(b"KenSilverman")
+count = struct.unpack_from("<I", grp, start + 12)[0]
+at, files = start + 16 + 16 * count, {}
+for i in range(count):
+    name = grp[start + 16 + 16 * i:start + 28 + 16 * i].rstrip(b"\0").decode("ascii", "replace")
+    size = struct.unpack_from("<I", grp, start + 28 + 16 * i)[0]
+    files[name] = grp[at:at + size]
+    at += size
+# the palette stores each colour in six bits
+palette = bytes(min(255, v * 4) for v in files["PALETTE.DAT"][:768])
+arts = [data for name, data in files.items() if name.endswith(".ART")]
+arts += [open(path, "rb").read() for path in sources[1:]]
+os.makedirs(OUT, exist_ok=True)
+for art in arts:
+    for number, image in tiles(art, palette):
+        with open(os.path.join(OUT, f"{number}.png"), "wb") as f:
+            f.write(image)
+with open(stamp, "w") as f:
+    f.write(mark)

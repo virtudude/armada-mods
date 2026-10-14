@@ -1,0 +1,26 @@
+#!/usr/bin/python3
+"""The smallest provider: tells the view how long it has run and how often it was tapped.
+
+A real one gets its state from its game here.
+"""
+import sys, time
+from armada_provider import Link
+
+APPID = 480     # one of steam_appids in mod.json
+
+
+def main():
+    link = Link(APPID)
+    start, taps = time.monotonic(), 0
+    while True:
+        taps += sum(1 for message in link.inputs() if message.get("tap"))
+        # only a state that differs from the last one is sent
+        link.send({"seconds": int(time.monotonic() - start), "taps": taps})
+        time.sleep(0.1)
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except ConnectionError:
+        sys.exit(0)

@@ -2,7 +2,7 @@
 # Balatro is a LOVE executable with its Lua archive appended. Build a copy in
 # this mod's overlay whose archive also holds the provider, loaded from main.lua.
 # The view draws with the game's own art, copied out of the same archive into the data folder.
-import os, sys, zipfile, io
+import hashlib, os, sys, zipfile, io
 game, upper = os.environ["ARMADA_MOD_GAME_DIR"], os.path.join(os.environ["ARMADA_MOD_DATA_DIR"], "overlay")
 os.makedirs(upper, exist_ok=True)
 here = os.environ["ARMADA_MOD_PACKAGE_DIR"]
@@ -11,6 +11,15 @@ ART = {"8BitDeck.png", "Enhancers.png", "Jokers.png", "Tarots.png", "Vouchers.pn
        "stickers.png", "chips.png", "m6x11plus.ttf"}
 art = os.path.join(os.environ["ARMADA_MOD_DATA_DIR"], "art")
 os.makedirs(art, exist_ok=True)
+# the copy is only built again when the game or the provider has changed
+info = os.stat(src)
+stamp = os.path.join(os.environ["ARMADA_MOD_DATA_DIR"], "stamp")
+mark = f"1 {info.st_size} {info.st_mtime_ns} {hashlib.sha256(open(mod, 'rb').read()).hexdigest()}"
+try:
+    if os.path.exists(dst) and open(stamp).read() == mark:
+        sys.exit(0)
+except OSError:
+    pass
 data = open(src, "rb").read()
 zin = zipfile.ZipFile(io.BytesIO(data))
 stub = min(i.header_offset for i in zin.infolist())
@@ -29,3 +38,5 @@ with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED, compresslevel=1) as zout:
 with open(dst + ".tmp", "wb") as f:
     f.write(data[:stub]); f.write(buf.getvalue())
 os.replace(dst + ".tmp", dst)
+with open(stamp, "w") as f:
+    f.write(mark)

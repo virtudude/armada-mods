@@ -1,0 +1,11 @@
+#!/bin/sh
+# The game's scripts cannot read the environment, so the folder they exchange files
+# through is written into them. The plugin reaches the game from the data folder.
+set -e
+out="$ARMADA_MOD_DATA_DIR/overlay/Plugins/Second Screen"
+mkdir -p "$out"
+for f in "$ARMADA_MOD_PACKAGE_DIR"/plugin/*; do
+    sed "s|@LINK@|$ARMADA_MOD_DATA_DIR/link|" "$f" > "$out/$(basename "$f")"
+done
+# the status display's own pictures, for the view; without them it still shows the numbers
+"$ARMADA_MOD_PACKAGE_DIR/hooks/art" || true

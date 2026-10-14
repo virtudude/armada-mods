@@ -1,0 +1,30 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  /* sizes come from the screen, so the page reads the same on any panel */
+  html { font-size: 3.4vh; }
+  html, body { margin: 0; height: 100%; overflow: hidden; user-select: none; -webkit-user-select: none; }
+  body { background: #101418; color: #e8e8e8; font: 1.4rem sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.5rem; }
+  button { font: inherit; padding: .6rem 2.4rem; border: 0; border-radius: .4rem; background: #3a7bd5; color: #fff; }
+  button:active { filter: brightness(1.3); }
+</style>
+</head>
+<body>
+<div id="text"></div>
+<button id="tap">Tap</button>
+<script>
+  const $ = id => document.getElementById(id);
+  function draw(state) {
+    // no state yet, or the provider has no game to show: the waiting screen
+    const idle = !state || state.idle;
+    $("text").textContent = idle ? "Waiting for the game" : `${state.seconds} s, ${state.taps} taps`;
+    $("tap").hidden = idle;
+  }
+  $("tap").onclick = () => armada.send({ tap: true });
+  armada.onState = draw;
+  draw(armada.last);
+</script>
+</body>
+</html>

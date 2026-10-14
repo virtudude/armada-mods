@@ -1,0 +1,17 @@
+{
+  "id": "second-screen-duke-nukem-3d",
+  "version": "0.1.0",
+  "name": "Duke Nukem 3D: Gear",
+  "summary": "Moves health, armor and ammo to the bottom screen so the game fills the top one, with every weapon and inventory item one touch away, drawn with the game's own art.",
+  "tags": [
+    "dual-screen"
+  ],
+  "steam_appids": [
+    434050
+  ],
+  "hooks": {
+    "before_launch": "hooks/before_launch",
+    "after_exit": "hooks/after_exit"
+  },
+  "second_screen": "host/run"
+}

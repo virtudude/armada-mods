@@ -143,7 +143,7 @@
     put("progress", [[s.nail.damage, "NAIL DAMAGE"], [p.essence < 0 ? "-" : p.essence.toLocaleString("en-US"), "ESSENCE"], [p.grubs + "<small class='dim'>/46</small>", "GRUBS FREED"]]
       .map(([v, k]) => `<div class="pg"><b>${v}</b><span>${k}</span></div>`).join("") +
       `<div class="pg">${pips(p.shards, 4)}<span>MASK SHARDS</span></div><div class="pg">${pips(p.fragments, 3)}<span>VESSEL FRAGMENTS</span></div>` +
-      `<div class="pg"><b>${p.completion}%</b><span>${clock(p.time)}</span></div>`);
+      `<div class="pg"><b>${p.completion < 0 ? "" : p.completion + "%"}</b><span>${clock(p.time)}</span></div>`);
   }
 
   function show(name) {

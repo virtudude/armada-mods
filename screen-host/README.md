@@ -60,9 +60,20 @@ Size text from the screen, not in fixed pixels. A root font size of about
 
 ## Game runtimes without sockets
 
-`filebridge <folder>` relays `hello.json` and `state.json` written into a
-folder to the host, and writes input back as `input.json`. See
-`second-screen-persona-3-reload/host/run` for how a mod starts both.
+`filebridge <folder> [seconds]` relays `hello.json` and `state.json` written into a
+folder to the host, and writes input back as `input.json`. Given seconds, it
+expects `state.json` to be written at least that often and sends the view
+`{"idle": true}` once the file is older, which is how a game that has left
+its level, or a script that has stopped, is noticed. See
+`second-screen-marathon/host/run` for how a mod starts both.
+
+## Providers in Python
+
+`lib/provider.py` holds what a provider outside the game needs besides its
+game: the link to the host, a virtual keyboard, and another process's
+memory. A mod's `build.sh` copies it next to the provider with
+`provider_lib`. `starter/my-mod` uses the link alone,
+`second-screen-duke-nukem-3d` all three.
 
 ## Developing a view without the game
 

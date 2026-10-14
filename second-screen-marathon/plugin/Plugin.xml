@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin name="Second Screen" version="1.0" description="Moves the status display to the second screen" hud_lua="display.lua" solo_lua="weapons.lua">
+  <scenario name="Marathon"/>
+</plugin>

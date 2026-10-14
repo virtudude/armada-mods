@@ -8,11 +8,13 @@
   var sock = null, last = "", inbuf = Buffer.alloc(0), used = null, dead = false;
 
   function send(type, obj) {
-    if (!sock) return;
+    // a host that has stopped reading is not sent more
+    if (!sock || sock.writableLength > 1 << 20) return false;
     var body = Buffer.from(typeof obj === "string" ? obj : JSON.stringify(obj), "utf8");
     var hd = Buffer.alloc(16);
     hd.write("A2SS", 0, "ascii"); hd.writeUInt16LE(type, 4); hd.writeUInt32LE(body.length, 8);
-    try { sock.write(Buffer.concat([hd, body])); } catch (e) {}
+    try { sock.write(Buffer.concat([hd, body])); } catch (e) { return false; }
+    return true;
   }
 
   function connect() {
@@ -47,8 +49,8 @@
         var ok = canUse(m.id);
         if (ok) ig.game.playerEntity.useItem(m.id);
         used = { id: m.id, ok: ok, n: (used ? used.n : 0) + 1 };
-      } else if (m.action === "element" && inGame() && !sc.model.isCutscene()) {
-        sc.model.player.setElementMode(m.mode | 0);
+      } else if (m.action === "element" && canSwitch(m.mode)) {
+        sc.model.player.setElementMode(m.mode);
       } else if (m.action === "assets") {
         // a view that has just loaded has none of the art yet
         assets = {}; last = "";
@@ -58,6 +60,12 @@
 
   function inGame() {
     return !!(window.sc && sc.model && sc.model.isGame && sc.model.isGame() && ig.game && ig.game.playerEntity);
+  }
+  function canSwitch(mode) {
+    var p = sc.model.player;
+    // what the game asks before it switches on a button, and what its own function leaves to the caller
+    return inGame() && !sc.model.isCutscene() && [0, 1, 2, 3, 4].indexOf(mode) >= 0 && !!p.hasElement(mode) && !!p.getCore(sc.PLAYER_CORE.ELEMENT_CHANGE) &&
+      !p.hasOverload && !ig.game.playerEntity.isElementChangeBlocked();
   }
   function canUse(id) {
     var p = sc.model.player;
@@ -75,9 +83,10 @@
   // Art the view draws with is cut from the running game's own images and sent once per link.
   var assets = {}, pending = null;
   function asset(key, draw) {
-    if (key in assets) return key;
-    assets[key] = true;
-    try { var url = draw(); if (url) { pending = pending || {}; pending[key] = url; } } catch (e) {}
+    // a picture the game has not loaded yet is tried again a few times
+    var tries = assets[key] || 0;
+    if (tries === true || tries >= 5) return key;
+    try { var url = draw(); if (url) { pending = pending || {}; pending[key] = url; } assets[key] = true; } catch (e) { assets[key] = tries + 1; }
     return key;
   }
   function icon(name) {
@@ -190,8 +199,8 @@
       s = JSON.stringify({ ready: false, visible: false });
       if (++failures > 50) { clearInterval(timer); dead = true; try { sock.destroy(); } catch (e2) {} return; }
     }
-    if (pending) { send(STATE, { assets: pending }); pending = null; }
-    if (s !== last) { last = s; send(STATE, s); }
+    if (pending && send(STATE, { assets: pending })) pending = null;
+    if (s !== last && send(STATE, s)) last = s;
   }, 200);
   connect();
 })();

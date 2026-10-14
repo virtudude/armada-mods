@@ -15,7 +15,7 @@ namespace ArmadaSecondScreen
         protected string status = "starting";
         protected Vector2 pan;
         protected float zoom = 1f;
-        float zoomBase = 1f, nextState, fpsT0, worst;
+        float zoomBase = 1f, nextState, fpsT0, worst, lastFailure = -1000f;
         int fpsFrames;
         bool touchMoved;
         Vector2 touchLast, touchDown;
@@ -44,6 +44,8 @@ namespace ArmadaSecondScreen
         // Messages from an HTML view other than the surface touches.
         protected virtual void OnInput(string json) { }
         protected virtual void OnAttach() { }
+        // The screen host has gone: let go of whatever was only kept for it.
+        protected virtual void OnDetach() { }
 
         void Awake()
         {
@@ -78,8 +80,10 @@ namespace ArmadaSecondScreen
                 if (link.Connected != wasConnected)
                 {
                     wasConnected = link.Connected; lastState = null; nextState = 0f;
-                    if (wasConnected) OnAttach();
+                    if (wasConnected) OnAttach(); else { content = false; OnDetach(); }
                 }
+                // nothing is done in the game while no screen is there to show it
+                if (!wasConnected) return;
                 while (link.Inbox.TryDequeue(out var m)) Handle(m);
                 Step();
                 if (Time.unscaledTime >= nextState)
@@ -91,18 +95,19 @@ namespace ArmadaSecondScreen
                     if (state != lastState) { lastState = state; link.SendText(Msg.State, state); }
                 }
                 if (streaming) streamer.Tick(content);
-                failures = 0;
+                // work done a few times a second fails a few times a second: only a quiet spell clears the count
+                if (Time.unscaledTime - lastFailure > 30f) failures = 0;
             }
             catch (Exception e)
             {
                 var s = e.ToString();
                 if (s != lastError) { lastError = s; Log.Info("update: " + s); }
+                lastFailure = Time.unscaledTime;
                 // A provider that keeps failing (for example after a game update) lets go of the screen.
                 if (++failures > 120)
                 {
-                    Log.Info("too many failures, provider disabled");
-                    link.Dispose();
-                    enabled = false;
+                    Log.Info("too many failures, provider removed");
+                    Destroy(this);
                 }
             }
         }

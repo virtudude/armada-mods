@@ -1,0 +1,13 @@
+{
+  "id": "my-mod",
+  "version": "0.1.0",
+  "name": "My Mod",
+  "summary": "One line about what the second screen shows.",
+  "tags": [
+    "dual-screen"
+  ],
+  "steam_appids": [
+    480
+  ],
+  "second_screen": "host/run"
+}

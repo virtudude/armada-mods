@@ -1,7 +1,0 @@
-#!/bin/sh
-# The library is preloaded from this mod's data folder: the game folder's name has a
-# space, which a preload path cannot contain. It gets a folder of its own because the
-# Steam runtime makes a preloaded library's folder read-only for the game.
-mkdir -p "$ARMADA_MOD_DATA_DIR/lib" "$ARMADA_MOD_DATA_DIR/art"
-rm -f "$ARMADA_MOD_DATA_DIR"/art/map-*.png "$ARMADA_MOD_DATA_DIR/libarmada_second_screen.so"
-cp "$ARMADA_MOD_PACKAGE_DIR/payload/libarmada_second_screen.so" "$ARMADA_MOD_DATA_DIR/lib/"

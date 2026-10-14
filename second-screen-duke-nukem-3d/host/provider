@@ -1,0 +1,167 @@
+#!/usr/bin/python3
+"""Reads the player's state out of the running game, sends it to the screen host,
+and presses weapon and item keys on a virtual keyboard when the view asks.
+
+The addresses below are fixed places in the 20th Anniversary World Tour's program. That is
+only good enough because the game is no longer updated: for one that still is, find what
+you read by its name or its shape. Nothing is written into the game, and what is read is
+checked for sense before any of it is used.
+"""
+import json, os, re, sys, time
+from armada_provider import Gone, Keyboard, Link, Process
+
+APPID = 434050
+EXE = "\\duke3d.exe"
+
+# the player record is a fixed part of the program
+HEALTH, AMMO, WEAPON, HOLODUKE, CARDS, MEDKIT, VISION = 0x9fd896, 0x9fd89a, 0x9fd8ba, 0x9fd8c4, 0x9fd8de, 0x9fd8e2, 0x9fd8fc
+SCUBA, JETPACK, STEROIDS, ARMOR, BOOTS, OWNED = 0x9fd93c, 0x9fd93e, 0x9fd940, 0x9fd942, 0x9fd952, 0x9fd98a
+WEAPONS = 13
+# how much of the game's own HUD is drawn: 8 the bar, 4 the small boxes, 0 nothing
+SCREEN_SIZE = 0x12dfcd0
+# what each inventory item holds when full
+FULL = {"medkit": 100, "steroids": 400, "holoduke": 2400, "jetpack": 1600, "vision": 1200, "scuba": 6400, "boots": 200}
+# the game's names for the keys the view can ask for, and the keys they have unless the player changed them
+WEAPON_ACTION = {0: "Weapon_1", 1: "Weapon_2", 2: "Weapon_3", 3: "Weapon_4", 4: "Weapon_5", 5: "Weapon_6", 6: "Weapon_7",
+                 11: "Weapon_7", 7: "Weapon_8", 8: "Weapon_9", 9: "Weapon_10", 12: "Weapon_10"}
+ITEM_ACTION = {"medkit": "MedKit", "steroids": "Steroids", "holoduke": "Holo_Duke", "jetpack": "Jetpack", "vision": "NightVision"}
+DEFAULTS = {"Weapon_1": "1", "Weapon_2": "2", "Weapon_3": "3", "Weapon_4": "4", "Weapon_5": "5", "Weapon_6": "6", "Weapon_7": "7",
+            "Weapon_8": "8", "Weapon_9": "9", "Weapon_10": "0", "MedKit": "M", "Steroids": "R", "Holo_Duke": "H", "Jetpack": "J",
+            "NightVision": "N", "Enlarge_Screen": "=", "Shrink_Screen": "-"}
+# keyboard codes for the names the game's settings file uses
+CODES = dict(zip("1234567890-=", range(2, 14)))
+CODES.update({ch: 16 + i for i, ch in enumerate("QWERTYUIOP")})
+CODES.update({ch: 30 + i for i, ch in enumerate("ASDFGHJKL")})
+CODES.update({ch: 44 + i for i, ch in enumerate("ZXCVBNM")})
+
+
+def bindings():
+    """The key for each action, from the game's settings file where the player has set one."""
+    keys = dict(DEFAULTS)
+    try:
+        text = open(os.path.join(os.environ["ARMADA_MOD_GAME_DIR"], "DUKE3D.CFG"), errors="replace").read()
+    except (OSError, KeyError):
+        text = ""
+    for action, first, second in re.findall(r'^(\w+) = "([^"]*)" "([^"]*)"', text, re.M):
+        if action in keys:
+            # an action the player has put on a key this keyboard lacks is left alone: its old key may do something else now
+            keys[action] = next((k for k in (first, second) if k.upper() in CODES), None)
+    return {action: CODES[key.upper()] for action, key in keys.items() if key}
+
+
+def read(game):
+    """The player's state, or None while no game is on. ValueError when what is read cannot be this game's player."""
+    owned = game.read(OWNED, WEAPONS)
+    if not owned[0]:
+        return None         # no game started yet: the kick is always owned in one
+    s16 = lambda addr: game.unpack("<h", addr)[0]
+    state = {
+        "health": s16(HEALTH), "armor": s16(ARMOR), "weapon": s16(WEAPON),
+        "ammo": list(game.unpack(f"<{WEAPONS}h", AMMO)),
+        "owned": [n for n in range(WEAPONS) if owned[n]], "cards": s16(CARDS),
+        "items": {"medkit": s16(MEDKIT), "steroids": s16(STEROIDS), "holoduke": s16(HOLODUKE),
+                  "jetpack": s16(JETPACK), "vision": s16(VISION), "scuba": s16(SCUBA), "boots": s16(BOOTS)},
+        "full": FULL,
+    }
+    if max(owned) > 1 or state["weapon"] not in state["owned"] or not -2000 <= state["health"] <= 300 \
+            or not 0 <= state["armor"] <= 200 or not 0 <= state["cards"] <= 7 or not all(0 <= n <= 999 for n in state["ammo"]) \
+            or not all(0 <= n <= 10000 for n in state["items"].values()) \
+            or game.unpack("<i", SCREEN_SIZE)[0] not in range(0, 65, 4):
+        raise ValueError("not the player record")
+    return state
+
+
+class Hud:
+    """Keeps the game's own HUD off while the bottom screen shows it, by pressing the game's key for a larger view."""
+
+    def __init__(self, press):
+        self.press, self.at = press, 0
+        self.saved = os.path.join(os.environ.get("ARMADA_MOD_DATA_DIR", ""), "screen-size")
+
+    def hide(self, game):
+        size = game.unpack("<i", SCREEN_SIZE)[0]
+        # once a second: the game takes no keys while it loads a level
+        if size == 0 or time.monotonic() < self.at:
+            return
+        if not os.path.exists(self.saved):
+            # the player's own size, for the exit hook to put back
+            with open(self.saved, "w") as f:
+                f.write(str(size))
+        self.press("Enlarge_Screen")
+        self.at = time.monotonic() + 1
+
+    def restore(self, game):
+        """Gives the player's own view back while the game is still on, for when the bottom screen is lost."""
+        try:
+            size = int(open(self.saved).read())
+            for _ in range(4):
+                if game.unpack("<i", SCREEN_SIZE)[0] >= size:
+                    os.remove(self.saved)
+                    break
+                self.press("Shrink_Screen")
+                time.sleep(0.3)
+        except (OSError, ValueError, LookupError, Gone):
+            pass        # the exit hook has the saved size still
+
+
+def main():
+    link = Link(APPID)
+    keys = bindings()
+    keyboard = Keyboard(keys.values())
+    press = lambda action: action in keys and keyboard.press(keys[action])
+    hud = Hud(press)
+    game, want, odd = None, None, 0
+    try:
+        loop(link, press, hud, game, want, odd)
+    finally:
+        found = Process.find(EXE)
+        if found:
+            hud.restore(found)
+
+
+def loop(link, press, hud, game, want, odd):
+    while True:
+        asked = link.inputs()
+        state = None
+        try:
+            game = game or Process.find(EXE)
+            state = read(game) if game else None
+            odd = 0
+        except Gone:
+            game = None
+        except (ValueError, LookupError):
+            odd += 1
+        # half a minute of a record that cannot be read or makes no sense: not a game this mod understands,
+        # so the screen is given back
+        if odd > 300:
+            link.send({"visible": False})
+            hud.restore(game)
+            while True:
+                link.inputs()
+                time.sleep(1)
+        link.send(state or {"idle": True})
+        if state:
+            hud.hide(game)
+            for ask in asked:
+                weapon, item = ask.get("weapon"), ask.get("item")
+                if weapon in WEAPON_ACTION and weapon in state["owned"]:
+                    # two weapons can share a key: it is pressed again when the other one came up
+                    want = [weapon, 2, 0]
+                elif item in ITEM_ACTION and state["items"][item] > 0:
+                    press(ITEM_ACTION[item])
+            if want and (state["weapon"] == want[0] or not want[1]):
+                want = None
+            elif want and time.monotonic() >= want[2]:
+                press(WEAPON_ACTION[want[0]])
+                want[1:] = want[1] - 1, time.monotonic() + 0.45
+        time.sleep(0.1)
+
+
+if __name__ == "__main__":
+    if sys.argv[1:] == ["--print"]:
+        print(json.dumps(read(Process.find(EXE))), bindings())
+        sys.exit(0)
+    try:
+        main()
+    except ConnectionError:
+        sys.exit(0)

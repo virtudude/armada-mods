@@ -1,0 +1,10 @@
+#!/bin/sh
+# The game's Lua has no sockets: the plugin writes its state into the link folder and
+# the bridge relays it to the screen host. A state not written for five seconds is a
+# game that has left its level.
+here=$(dirname "$0")
+link="$ARMADA_MOD_DATA_DIR/link"
+rm -rf "$link" && mkdir -p "$link"
+echo '{"appid":2398450}' > "$link/hello.json"
+"$here/filebridge" "$link" 5 &
+exec "$here/screen-host"

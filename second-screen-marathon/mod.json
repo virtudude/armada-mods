@@ -1,0 +1,16 @@
+{
+  "id": "second-screen-marathon",
+  "version": "0.1.0",
+  "name": "Classic Marathon: Suit Display",
+  "summary": "Moves the status display to the bottom screen so the game fills the top one: shield, oxygen, motion sensor and your weapons, with a touch to draw one.",
+  "tags": [
+    "dual-screen"
+  ],
+  "steam_appids": [
+    2398450
+  ],
+  "hooks": {
+    "before_launch": "hooks/before_launch"
+  },
+  "second_screen": "host/run"
+}

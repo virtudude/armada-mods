@@ -152,7 +152,7 @@ namespace ArmadaSecondScreen
 
             sb.Append("],\"progress\":{\"essence\":").Append(pd.GetBool("hasDreamNail") ? pd.GetInt("dreamOrbs") : -1)
               .Append(",\"grubs\":").Append(pd.GetInt("grubsCollected")).Append(",\"shards\":").Append(pd.GetInt("heartPieces"))
-              .Append(",\"fragments\":").Append(pd.GetInt("vesselFragments")).Append(",\"completion\":").Append(Mathf.RoundToInt(pd.GetFloat("completionPercentage")))
+              .Append(",\"fragments\":").Append(pd.GetInt("vesselFragments")).Append(",\"completion\":").Append(pd.GetBool("unlockedCompletionRate") ? Mathf.RoundToInt(pd.GetFloat("completionPercentage")) : -1)
               .Append(",\"time\":").Append((int)pd.GetFloat("playTime")).Append('}');
             return sb.ToString();
         }
@@ -169,16 +169,22 @@ namespace ArmadaSecondScreen
             int w = Mathf.Max(1, Mathf.RoundToInt(r.width * k)), h = Mathf.Max(1, Mathf.RoundToInt(r.height * k));
             var rt = RenderTexture.GetTemporary(w, h, 0, RenderTextureFormat.ARGB32);
             var prev = RenderTexture.active;
-            Graphics.Blit(tex, rt, new Vector2(r.width / tex.width, r.height / tex.height), new Vector2(r.x / tex.width, r.y / tex.height));
-            RenderTexture.active = rt;
             var copy = new Texture2D(w, h, TextureFormat.RGBA32, false);
-            copy.ReadPixels(new Rect(0, 0, w, h), 0, 0);
-            copy.Apply();
-            RenderTexture.active = prev;
-            RenderTexture.ReleaseTemporary(rt);
-            byte[] png = ImageConversion.EncodeToPNG(copy);
-            UnityEngine.Object.Destroy(copy);
-            return "data:image/png;base64," + Convert.ToBase64String(png);
+            // the game's rendering is left as it was found, whatever happens here
+            try
+            {
+                Graphics.Blit(tex, rt, new Vector2(r.width / tex.width, r.height / tex.height), new Vector2(r.x / tex.width, r.y / tex.height));
+                RenderTexture.active = rt;
+                copy.ReadPixels(new Rect(0, 0, w, h), 0, 0);
+                copy.Apply();
+                return "data:image/png;base64," + Convert.ToBase64String(ImageConversion.EncodeToPNG(copy));
+            }
+            finally
+            {
+                RenderTexture.active = prev;
+                RenderTexture.ReleaseTemporary(rt);
+                UnityEngine.Object.Destroy(copy);
+            }
         }
 
         // Follows the game's own charm rules. Refused while the game's charm screen is open,
