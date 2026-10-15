@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+    />
+    <title>Pip-Boy</title>
+    <link rel="stylesheet" href="style.css" />
+    <script defer src="crt.js"></script>
+    <script defer src="app.js"></script>
+  </head>
+  <body>
+    <div id="display">
+      <nav id="tabs" aria-label="Pip-Boy pages"></nav>
+      <nav id="subtabs" aria-label="Page categories"></nav>
+      <main id="content">
+        <div class="empty">
+          <p>INITIALIZING PIP-BOY</p>
+          <p class="muted">Load a save to connect.</p>
+        </div>
+      </main>
+      <div id="vitals" aria-label="Player status"></div>
+      <footer>
+        <span id="context"></span>
+        <div id="quick-actions"></div>
+      </footer>
+    </div>
+    <div id="connection" class="message" role="status"></div>
+    <div id="notice" class="message" role="status"></div>
+    <div
+      id="confirmation"
+      hidden
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirm-title"
+    >
+      <div class="confirm-card">
+        <h2 id="confirm-title"></h2>
+        <p id="confirm-description"></p>
+        <div class="actions">
+          <button id="cancel">Cancel</button
+          ><button id="confirm">Confirm</button>
+        </div>
+        <div class="timeout"></div>
+      </div>
+    </div>
+  </body>
+</html>

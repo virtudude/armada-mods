@@ -1,0 +1,40 @@
+#!/usr/bin/env python3
+"""Prepare display assets from this installation; never bundle Bethesda art."""
+import json
+import os
+from pathlib import Path
+import sys
+
+package = Path(os.environ['ARMADA_MOD_PACKAGE_DIR'])
+game = Path(os.environ['ARMADA_MOD_GAME_DIR'])
+data = Path(os.environ['ARMADA_MOD_DATA_DIR'])
+if not (game / 'Fallout4.exe').is_file():
+    sys.exit('Pip-Boy requires the Windows version of Fallout 4 through Proton.')
+sys.path.insert(0, str(package / 'tools'))
+from companion import prepare_companion, UnsupportedExecutable
+try:
+    companion = prepare_companion(game / 'Fallout4.exe', data / 'overlay/Fallout4.exe')
+except (OSError, UnsupportedExecutable) as exc:
+    sys.exit(str(exc))
+print('Prepared companion service for Fallout 4 ' + companion['version'], flush=True)
+from assets import prepare_assets
+manifest = prepare_assets(game, data)
+from fonts import prepare_fonts
+fonts = prepare_fonts(game, data)
+manifest['fonts'] = fonts['fonts']
+manifest['warnings'] += fonts.get('warnings', [])
+from effects import prepare_effects
+effects = prepare_effects(game, data)
+manifest['effects'] = effects['effects']
+manifest['warnings'] += effects.get('warnings', [])
+from page_assets import prepare_page_assets
+pages = prepare_page_assets(game, data)
+manifest.setdefault('animations', {}).update(pages.get('animations', {}))
+manifest.setdefault('pages', {}).update(pages.get('pages', {}))
+manifest['warnings'] += pages.get('pageAssetWarnings', [])
+from assets import atomic_write
+atomic_write(data / 'assets/manifest.json', json.dumps(manifest, indent=2).encode())
+for warning in manifest.get('warnings', []):
+    print('Pip-Boy:', warning, file=sys.stderr)
+print('Prepared Pip-Boy: %d game maps and %d game marker icons.' % (
+    len(manifest['maps']), len(manifest['markers'])), flush=True)
