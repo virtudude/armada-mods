@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable>
+    <AssemblyName>ArmadaStardew</AssemblyName><EnableNETAnalyzers>false</EnableNETAnalyzers>
+    <PathMap>$(MSBuildProjectDirectory)=/_/stardew</PathMap>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="StardewModdingAPI"><HintPath>$(Smapi)/StardewModdingAPI.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="SMAPI.Toolkit.CoreInterfaces"><HintPath>$(Smapi)/smapi-internal/SMAPI.Toolkit.CoreInterfaces.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Stardew Valley"><HintPath>$(Refs)/Stardew Valley.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="StardewValley.GameData"><HintPath>$(Refs)/StardewValley.GameData.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="MonoGame.Framework"><HintPath>$(Refs)/MonoGame.Framework.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="xTile"><HintPath>$(Refs)/xTile.dll</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+</Project>

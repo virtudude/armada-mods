@@ -12,6 +12,7 @@ devices.
 | `second-screen-crosscode` | CrossCode | Status, element switching and consumables by touch, quests |
 | `second-screen-duke-nukem-3d` | Duke Nukem 3D: 20th Anniversary World Tour | Health, armor and ammo moved off the game screen, weapons and inventory items by touch |
 | `second-screen-marathon` | Classic Marathon | The suit display moved off the game screen: shield, oxygen, motion sensor, weapons by touch |
+| `second-screen-stardew-valley` | Stardew Valley (Proton) | Map, touch backpack management, skills, friendships, animals, collections, bundles and quests, using the game's art |
 
 A mod reaches into its game's code, so a game update can break it. A mod
 that stops understanding its game is meant to let go of the second screen,
@@ -98,6 +99,7 @@ Every build needs `bash`, `python3`, `curl` and `unzip`. Beyond that:
 |---|---|
 | Hollow Knight | `dotnet` 8 or `podman`, and the game's assemblies (below) |
 | Balatro, CrossCode, Duke Nukem 3D, Marathon | Nothing more |
+| Stardew Valley | `dotnet` 8 or `podman`, and reference assemblies from the Windows game |
 
 A Unity mod compiles against the game's own assemblies. Those are not in
 this repository. Collect them once from a copy of the game you own:

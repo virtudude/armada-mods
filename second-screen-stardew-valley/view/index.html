@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no">
+<title>Stardew Valley</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-phase="boot" style="background:#000">
+<div id="scenery" aria-hidden="true"><div class="title-sky"></div><img class="title-cloud cloud-0" alt=""><img class="title-cloud cloud-1" alt=""><img class="title-cloud cloud-2" alt=""><div class="title-mountains"></div></div>
+<div id="menu">
+<nav aria-label="Journal pages" role="tablist">
+<button data-tab="inventory" class="active" role="tab" aria-label="Backpack" aria-selected="true"><img class="tab-icon" alt=""><span class="tab-caption"><game-label>Backpack</game-label></span></button>
+<button data-tab="skills" role="tab" aria-label="Skills" aria-selected="false"><img class="tab-icon" alt=""><span class="tab-caption"><game-label>Skills</game-label></span></button>
+<button data-tab="people" role="tab" aria-label="Social" aria-selected="false"><img class="tab-icon" alt=""><span class="tab-caption"><game-label>Social</game-label></span></button>
+<button data-tab="map" role="tab" aria-label="Map" aria-selected="false"><img class="tab-icon" alt=""><span class="tab-caption"><game-label>Map</game-label></span></button>
+<button data-tab="animals" role="tab" aria-label="Animals" aria-selected="false"><img class="tab-icon" alt=""><span class="tab-caption"><game-label>Animals</game-label></span></button>
+<button data-tab="special" role="tab" aria-label="Special Items" aria-selected="false"><img class="tab-icon" alt=""><span class="tab-caption"><game-label>Special Items</game-label></span></button>
+<button data-tab="collections" role="tab" aria-label="Collections" aria-selected="false"><img class="tab-icon" alt=""><span class="tab-caption"><game-label>Collections</game-label></span></button>
+<button data-tab="community" role="tab" aria-label="Community Centre" aria-selected="false"><img class="tab-icon" alt=""><span class="tab-caption"><game-label>Community Centre</game-label></span></button>
+<button data-tab="journal" role="tab" aria-label="Journal" aria-selected="false"><img class="tab-icon" alt=""><span class="tab-caption"><game-label>Journal</game-label></span></button>
+</nav>
+<main>
+<div id="idle" class="native-panel"><game-label class="large">Stardew Valley</game-label><p id="idle-message"><game-label wrap>Your map, backpack and friendships will appear here when you load a farm.</game-label></p></div>
+<section id="inventory" class="page" hidden>
+<div class="backpack native-panel"><div id="slots" role="list" aria-label="Backpack slots"></div></div>
+<div class="farmer-panel native-panel"><div id="farmer-equipment"><div id="equipment-left" class="equipment-column"></div><div class="farmer"><img id="farmer-portrait" alt="Your farmer"><game-label id="farmer-name"></game-label></div><div id="equipment-right" class="equipment-column"></div></div><div id="farm-ledger"><game-label id="farm-title"></game-label><game-label id="funds"></game-label><game-label id="earnings"></game-label><game-label id="date"></game-label></div></div>
+<aside id="item-detail" class="tooltip" hidden></aside>
+</section>
+<section id="map" class="page native-panel" hidden>
+<div class="page-heading"><game-label class="heading" id="location">The valley</game-label><div class="map-controls"><button id="zoom-out" aria-label="Zoom out"><game-label>-</game-label></button><button id="center" aria-label="Center on player"><game-label>Home</game-label></button><button id="zoom-in" aria-label="Zoom in"><game-label>+</game-label></button></div></div>
+<div id="map-frame"><div id="map-scene" role="img" aria-label="World map with your position"></div><div id="map-people" aria-label="Villagers on the map"></div><img id="map-marker" alt="Your farmer" hidden><div id="map-note" class="tooltip" hidden></div></div>
+<div class="map-bottom"><div id="regions"></div><span id="map-caption"></span></div>
+</section>
+<section id="people" class="page native-panel" hidden><div class="page-heading"><game-label class="heading">Social</game-label><button id="social-sort" class="small-button"><game-label>By hearts</game-label></button></div><div class="social-layout"><div id="people-list"></div><aside id="person-detail"></aside></div></section>
+<section id="journal" class="page native-panel" hidden><div class="page-heading"><game-label class="heading">Journal</game-label><div class="journal-actions"><span id="quest-count"></span><button id="journal-back" class="small-button" hidden><game-label>Back</game-label></button></div></div><div id="quests"></div></section>
+<section id="skills" class="page native-panel" hidden><div class="page-heading"><game-label class="heading">Skills</game-label></div><div class="skills-layout"><aside id="skills-farmer"></aside><div class="skills-main"><div id="skill-rows"></div><aside id="skill-detail"></aside></div></div></section>
+<section id="animals" class="page native-panel" hidden><div class="page-heading"><game-label class="heading">Animals</game-label><span id="animal-count"></span></div><div class="social-layout"><div id="animal-list"></div><aside id="animal-detail"></aside></div></section>
+<section id="special" class="page native-panel" hidden><div class="page-heading"><game-label class="heading">Special Items</game-label><span id="special-count"></span></div><div id="special-grid" class="catalog-grid"></div><aside id="special-detail" class="tooltip catalog-detail" hidden></aside></section>
+<section id="collections" class="page native-panel" hidden><div class="page-heading"><game-label class="heading" id="collection-title">Collections</game-label><span id="collection-count"></span></div><div class="collections-layout"><div id="collection-tabs" role="tablist" aria-label="Collection categories"></div><div class="collection-catalog native-panel"><div id="collection-grid" class="catalog-grid"></div></div></div><aside id="collection-detail" class="tooltip catalog-detail" hidden></aside></section>
+
+<section id="community" class="page native-panel" hidden><div class="page-heading"><game-label class="heading">Community Centre</game-label><div class="community-actions"><button id="community-back" class="small-button" hidden><game-label>Back</game-label></button></div></div><div id="community-note"><div id="community-rooms"></div><div id="community-bundles"></div></div><div id="community-reward"><game-label wrap></game-label></div><aside id="community-detail" class="tooltip catalog-detail" hidden></aside></section>
+
+</main>
+</div>
+<img id="inventory-drag" alt="" hidden>
+<div id="status" role="status" hidden></div>
+<div id="toast" class="tooltip" role="status" hidden></div>
+<script src="app.js"></script>
+</body></html>

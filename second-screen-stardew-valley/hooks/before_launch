@@ -1,0 +1,27 @@
+#!/usr/bin/python3
+"""Stage a private SMAPI install. Never write into the real game or save folder."""
+import json
+import os
+import pathlib
+import shutil
+import sys
+
+game = pathlib.Path(os.environ['ARMADA_MOD_GAME_DIR'])
+package = pathlib.Path(os.environ['ARMADA_MOD_PACKAGE_DIR'])
+upper = pathlib.Path(os.environ['ARMADA_MOD_DATA_DIR']) / 'overlay'
+if (game / 'StardewModdingAPI.dll').exists() or (game / 'Mods').exists():
+    sys.exit('Field Journal expects vanilla Stardew under Proton; existing SMAPI/Mods left untouched.')
+if not (game / 'Stardew Valley.exe').is_file():
+    sys.exit('Field Journal requires the Windows edition of Stardew Valley through Proton.')
+deps = game / 'Stardew Valley.deps.json'
+meta = json.loads(deps.read_text())
+versions = [key.split('/', 1)[1] for key in meta['libraries'] if key.startswith('Stardew Valley/')]
+if not versions or not versions[0].startswith('1.6.'):
+    sys.exit('Field Journal currently supports Stardew Valley 1.6 only.')
+shutil.copytree(package / 'payload', upper, dirs_exist_ok=True)
+shutil.copyfile(deps, upper / 'StardewModdingAPI.deps.json')
+assets = upper / 'Mods/ArmadaSecondScreen/assets'
+if assets.exists():
+    shutil.rmtree(assets)
+assets.mkdir(parents=True)
+print('Prepared Field Journal: Proton SMAPI, event-based provider, local game art.', flush=True)

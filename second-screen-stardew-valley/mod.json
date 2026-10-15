@@ -1,0 +1,13 @@
+{
+  "id": "second-screen-stardew-valley",
+  "version": "0.1.0",
+  "name": "Stardew Valley: Field Journal",
+  "summary": "Touch backpack management, map, skills, friends, animals, collections, bundles and quests on the second screen.",
+  "description": "For the Windows version through Proton. Uses art from your own game. Includes SMAPI with its Harmony compatibility fix disabled for Armada; existing SMAPI installations and other mod folders are left untouched and this package is skipped.",
+  "tags": ["dual-screen"],
+  "steam_appids": [413150],
+  "hooks": {"before_launch": "hooks/before_launch"},
+  "second_screen": "host/screen-host",
+  "view_options": {"lock_page_zoom": true},
+  "env": {"SMAPI_NO_TERMINAL": "true", "DOTNET_gcConcurrent": "0"}
+}
