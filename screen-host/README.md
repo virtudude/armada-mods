@@ -55,6 +55,11 @@ on the ones meant for the pixels as the pixel-view INPUT messages above.
 
 The page can only navigate inside its own `view/` folder.
 
+An app which implements its own pinch gestures can set
+`"view_options": {"lock_page_zoom": true}` in `mod.json` to disable WebKitGTK's
+native whole-page pinch zoom. Its HTML should also constrain the viewport and
+handle touch defaults; list scrolling and app-specific map zoom remain available.
+
 Size text from the screen, not in fixed pixels. A root font size of about
 3.4% of the screen height gives readable body text on a small dense panel.
 

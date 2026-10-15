@@ -12,6 +12,16 @@ source lib/build.sh
 MOD="${1%/}"
 game="$(realpath "$2")"
 [[ -f "$MOD/mod.json" ]] || die "no such mod"
+if [[ "$MOD" == second-screen-stardew-valley ]]; then
+    out="$ROOT/refs/$MOD"
+    mkdir -p "$out"
+    for assembly in 'Stardew Valley' StardewValley.GameData MonoGame.Framework xTile; do
+        [[ -f "$game/$assembly.dll" ]] || die "missing $assembly.dll in $game"
+        cp "$game/$assembly.dll" "$out/"
+    done
+    echo "refs: copied Stardew Valley reference assemblies"
+    exit 0
+fi
 data="$(find "$game" -maxdepth 1 -type d -name '*_Data' | head -1)"
 [[ -n "$data" ]] || die "$game has no *_Data folder; is it a Unity game?"
 out="$ROOT/refs/$MOD"
